@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini RAG App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    body {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f6f7f9;
+      color: #111827;
+      margin: 0;
+      height: 100vh;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 100vh;
+    }
+
+    .panel {
+      padding: 32px 28px;
+      overflow-y: auto;
+    }
+
+    .left {
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+    }
+
+    .right {
+      background: #fbfbfc;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #111827;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+
+    h2 {
+      color: #1f2933;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    p {
+      color: #4b5563;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    textarea, input {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 12px;
+      color: #111827;
+      font-size: 14px;
+      outline: none;
+    }
+
+    textarea:focus, input:focus {
+      border-color: #6366f1;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    button {
+      background: #111827;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: 500;
+      color: #ffffff;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: #1f2933;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .status.success { color: #059669; }
+    .status.error { color: #dc2626; }
+
+    .answer-box {
+      margin-top: 20px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .answer-text {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+
+    .citations {
+      border-top: 1px solid #e5e7eb;
+      padding-top: 10px;
+    }
+
+    .citation-item {
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #6b7280;
+      pointer-events: none;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .left {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="layout">
+    <div class="panel left">
+      <h1>Mini RAG</h1>
+      <h2>Ingest Knowledge</h2>
+      <p>Paste text or document content to add it to the knowledge base.</p>
+
+      <textarea id="ingestText" placeholder="Paste text here..."></textarea>
+      <button onclick="ingest()">Ingest</button>
+      <div id="ingestStatus" class="status"></div>
+    </div>
+
+    <div class="panel right">
+      <h2>Ask a Question</h2>
+      <p>Ask questions based on the ingested content.</p>
+
+      <input id="questionInput" placeholder="Type your question..." />
+      <button onclick="ask()">Ask</button>
+
+      <div id="qaStatus" class="status"></div>
+
+      <div id="answerSection" class="answer-box" style="display:none;">
+        <div class="answer-text" id="answerText"></div>
+        <div class="citations" id="citations"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Mini RAG Application
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    async function ingest() {
+      const text = document.getElementById("ingestText").value;
+      const status = document.getElementById("ingestStatus");
+
+      status.textContent = "Ingesting...";
+      status.className = "status";
+
+      try {
+        const res = await fetch(API_BASE + "/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+
+        if (!res.ok) throw new Error();
+
+        status.textContent = "Text ingested successfully.";
+        status.className = "status success";
+      } catch {
+        status.textContent = "Failed to ingest text.";
+        status.className = "status error";
+      }
+    }
+
+    async function ask() {
+      const question = document.getElementById("questionInput").value;
+      const qaStatus = document.getElementById("qaStatus");
+      const answerBox = document.getElementById("answerSection");
+      const answerText = document.getElementById("answerText");
+      const citationsDiv = document.getElementById("citations");
+
+      qaStatus.textContent = "Fetching answer...";
+      qaStatus.className = "status";
+
+      try {
+        const res = await fetch(API_BASE + "/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        answerText.textContent = "Answer: " + data.answer;
+
+        citationsDiv.innerHTML = "<h4>Sources</h4>";
+        data.sources.forEach((src, idx) => {
+          const div = document.createElement("div");
+          div.className = "citation-item";
+          div.textContent = "[" + (idx + 1) + "] " + src.content;
+          citationsDiv.appendChild(div);
+        });
+
+        answerBox.style.display = "block";
+        qaStatus.textContent = "";
+        answerBox.scrollIntoView({ behavior: "smooth" });
+
+      } catch {
+        qaStatus.textContent = "Failed to fetch answer.";
+        qaStatus.className = "status error";
+      }
+    }
+  </script>
+
+</body>
+</html>
