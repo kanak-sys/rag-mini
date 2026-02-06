@@ -126,8 +126,6 @@ Create a `.env` file inside `backend/`:
     GROQ_API_KEY=your_groq_api_key
     
 
-> Do not commit `.env` to version control.
-
 * * *
 
 ### 5\. Supabase setup (Vector Database)
@@ -301,6 +299,3 @@ Query the knowledge base using RAG.
 
 This project is for learning and demonstration purposes. 
 
-* * *
-
-If you want, I can also provide a small **architecture diagram image** to embed in this README.
