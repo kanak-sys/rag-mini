@@ -1,5 +1,3 @@
-Here’s a complete, polished **`README.md`** you can copy directly into your project root. It’s formatted for Markdown viewers (GitHub/GitLab), includes setup, commands, usage, troubleshooting, and future improvements.
-
 * * *
 
 # Mini RAG – Retrieval Augmented Generation App
@@ -303,8 +301,7 @@ Query the knowledge base using RAG.
 
 ## License
 
-This project is for learning and demonstration purposes.  
-Keep API keys secure and do not commit secrets to the repository.
+This project is for learning and demonstration purposes. 
 
 * * *
 
