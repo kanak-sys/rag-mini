@@ -1,5 +1,3 @@
-* * *
-
 # Mini RAG – Retrieval Augmented Generation App
 
 A simple Retrieval-Augmented Generation (RAG) web application.  
